@@ -1,0 +1,15 @@
+/* src/styles/common.scss */
+@use "./color" as color;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin card {
+  background-color: color.$background-light;
+  border-radius: 12px;
+  border: 1px solid color.$border-color;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}

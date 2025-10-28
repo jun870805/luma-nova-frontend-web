@@ -1,0 +1,85 @@
+/* src/components/chatList/index.module.scss */
+@use "../../styles/color" as color;
+
+.container {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  background: color.$background-light;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 14px 16px;
+  border-bottom: 1px solid color.$border-color;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent),
+    color.$background-light;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 18px;
+  color: color.$text-main;
+  letter-spacing: 0.2px;
+}
+
+.listArea {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 10px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.item {
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  background: #121214;
+  border: 1px solid color.$border-color;
+  border-radius: 12px;
+  color: color.$text-main;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.05s ease;
+
+  &:active {
+    transform: scale(0.995);
+  }
+}
+
+.itemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.itemTitle {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: color.$text-main;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemTime {
+  margin-left: 8px;
+  font-size: 12px;
+  color: color.$text-sub;
+  flex-shrink: 0;
+}
+
+.itemSub {
+  margin-top: 6px;
+  min-height: 18px; /* 空字串時保持行高 */
+  font-size: 13px;
+  color: color.$text-sub;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

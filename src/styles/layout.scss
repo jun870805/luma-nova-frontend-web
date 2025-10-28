@@ -1,0 +1,44 @@
+/* src/styles/layout.scss */
+@use "./color" as color;
+@use "./font";
+@use "./common";
+
+:root {
+  --vh: 1vh;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  overflow: hidden; /* 防止整頁滾動 */
+  background: color.$background;
+}
+
+.appContainer {
+  @include common.flex-center;
+  width: 100%;
+  height: calc(var(--vh) * 100); /* 以 visualViewport 為準 */
+  height: 100svh;
+  @supports (height: 100dvh) {
+    height: 100dvh; /* 新版瀏覽器 */
+  }
+  background-color: color.$background;
+  overflow: hidden;
+  -webkit-overflow-scrolling: none;
+
+  .chatWrapper {
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    background-color: color.$background-light;
+    display: flex;
+    flex-direction: column;
+  }
+}
