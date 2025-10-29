@@ -22,10 +22,7 @@ export function getRoleImageUrl(roleId: string, imageId: string): string | undef
   if (cache.has(key)) return cache.get(key)
 
   const regex = new RegExp(`assets\\/roles\\/${roleId}\\/${imageId}\\.(png|jpe?g|webp)$`, 'i')
-  console.log('regex', `assets\\/roles\\/${roleId}\\/${imageId}\\.(png|jpe?g|webp)$`)
-
   let url: string | undefined
-  console.log('modules', modules)
   for (const [path, resolvedUrl] of Object.entries(modules)) {
     if (regex.test(path)) {
       url = resolvedUrl
