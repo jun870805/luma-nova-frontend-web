@@ -1,9 +1,18 @@
 // src/utils/roleImage.ts
 
-const modules = import.meta.glob('../assets/roles/**/*.{png,jpg,jpeg,webp}', {
-  eager: true,
-  as: 'url'
-}) as Record<string, string>
+type ModuleVal = string | { default: string }
+
+const rawModules = import.meta.glob('/src/assets/roles/**/*.{png,jpg,jpeg,webp}', {
+  eager: true
+  // 這裡即使加了 as:'url'，某些情況仍可能回 { default: string }
+  // as: 'url',
+}) as Record<string, ModuleVal>
+
+// 🔧 統一攤平成 URL 字串
+const modules: Record<string, string> = {}
+for (const [k, v] of Object.entries(rawModules)) {
+  modules[k] = typeof v === 'string' ? v : (v?.default as string)
+}
 
 type CacheKey = `${string}::${string}`
 const cache = new Map<CacheKey, string | undefined>()
