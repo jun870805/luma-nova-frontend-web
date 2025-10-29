@@ -1,6 +1,6 @@
 // src/utils/roleImage.ts
 
-const modules = import.meta.glob('../assets/roles/**/*.{png,jpg,jpeg,webp}', {
+const modules = import.meta.glob('@assets/roles/**/*.{png,jpg,jpeg,webp}', {
   eager: true,
   as: 'url'
 }) as Record<string, string>
