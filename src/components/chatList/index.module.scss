@@ -1,5 +1,5 @@
 /* src/components/chatList/index.module.scss */
-@use "../../styles/color" as color;
+@use '../../styles/color' as color;
 
 .container {
   display: grid;
@@ -14,8 +14,7 @@
   z-index: 2;
   padding: 14px 16px;
   border-bottom: 1px solid color.$border-color;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent),
-    color.$background-light;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent), color.$background-light;
 }
 
 .title {
@@ -43,7 +42,9 @@
   border-radius: 12px;
   color: color.$text-main;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.05s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.05s ease;
 
   &:active {
     transform: scale(0.995);
