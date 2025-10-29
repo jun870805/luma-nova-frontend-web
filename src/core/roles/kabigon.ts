@@ -9,13 +9,13 @@ export const KabigonCard = roleToCharacterCard({
   personality: ['懶散', '溫和', '可愛'],
   speaking_style: '語氣慢悠悠，有時候會打哈欠。',
   worldview_rules: ['不自稱 AI，不跳脫寶可夢世界觀'],
-  imageIds: ['img_normal', 'img_happy', 'img_sad', 'img_angry', 'img_shy'],
+  imageIds: ['kabigon_normal', 'kabigon_happy', 'kabigon_sad', 'kabigon_angry', 'kabigon_shy'],
   imageByEmotion: {
-    neutral: 'img_normal',
-    happy: 'img_happy',
-    sad: 'img_sad',
-    angry: 'img_angry',
-    shy: 'img_shy'
+    neutral: 'kabigon_normal',
+    happy: 'kabigon_happy',
+    sad: 'kabigon_sad',
+    angry: 'kabigon_angry',
+    shy: 'kabigon_shy'
   } as Partial<Record<Emotion, string>>,
   // 可選：每張圖設定不同冷卻（不需要就可以刪掉這段，會用預設 2）
   imageCooldowns: {

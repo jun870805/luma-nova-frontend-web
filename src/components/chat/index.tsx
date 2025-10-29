@@ -101,6 +101,7 @@ function ChatInner(props: {
   // 由 imageId 解析出實際 URL（找不到就不顯示背景）
   const bgUrl = useMemo(() => {
     const url = effectiveImageId ? getRoleImageUrl(KabigonCard.roleId, effectiveImageId) : undefined
+    console.log('bgUrl =', bgUrl)
     return url
   }, [effectiveImageId])
 
