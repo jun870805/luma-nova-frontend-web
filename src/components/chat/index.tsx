@@ -11,8 +11,6 @@ import type { Msg as StoreMsg } from '../../utils/chatStorage'
 import { loadMessages, saveMessages, clearMessages } from '../../utils/chatStorage'
 
 import type { CharacterCard } from '../../core/chat/types'
-import { KabigonCard } from '../../core/roles/kabigon'
-import { SistersCard } from '../../core/roles/sisters'
 
 import { useCharacterChat } from '../../hooks/useCharacterChat'
 import { callLLM_FormMode } from '../../services/llmClient'
@@ -20,13 +18,19 @@ import { getRoleImageUrl } from '../../utils/roleImage'
 import { getRoomUi, setRoomUi, clearRoomUi } from '../../utils/chatUiStorage'
 import { clearChatId } from '../../utils/roleSession'
 
+import { KabigonCard } from '../../core/roles/kabigon'
+import { SistersCard } from '../../core/roles/sisters'
+import { MuxingCard } from '../../core/roles/muxing'
+
 type Msg = StoreMsg
 
 // 依聊天室 id 取得角色卡
-const getCharacterCard = (id: string): CharacterCard => {
+const getCharacterCard = (id: string) => {
   switch (id) {
     case 'sisters':
       return SistersCard
+    case 'muxing':
+      return MuxingCard
     case 'kabigon':
     default:
       return KabigonCard
@@ -208,7 +212,10 @@ function ChatInner(props: {
           <div className={styles.rowAi}>
             <div className={styles.bubbleAi}>
               <div className={styles.dotLoading}>
-                <span></span><span></span><span></span><span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
             </div>
           </div>
@@ -237,7 +244,12 @@ function ChatInner(props: {
           data-bwignore="true"
           name="chat-message"
         />
-        <button className={`${styles.sendBtn} ${replying ? styles.disabled : ''}`} onClick={doSend} aria-label="send" disabled={replying}>
+        <button
+          className={`${styles.sendBtn} ${replying ? styles.disabled : ''}`}
+          onClick={doSend}
+          aria-label="send"
+          disabled={replying}
+        >
           <img className={styles.sendIcon} src={sendIcon} alt="send" />
         </button>
       </div>
