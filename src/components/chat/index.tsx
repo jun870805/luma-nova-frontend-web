@@ -10,7 +10,10 @@ import { rooms as allRooms } from '../../data/rooms'
 import type { Msg as StoreMsg } from '../../utils/chatStorage'
 import { loadMessages, saveMessages, clearMessages } from '../../utils/chatStorage'
 
+import type { CharacterCard } from '../../core/chat/types'
 import { KabigonCard } from '../../core/roles/kabigon'
+import { SistersCard } from '../../core/roles/sisters'
+
 import { useCharacterChat } from '../../hooks/useCharacterChat'
 import { callLLM_FormMode } from '../../services/llmClient'
 import { getRoleImageUrl } from '../../utils/roleImage'
@@ -19,11 +22,24 @@ import { clearChatId } from '../../utils/roleSession'
 
 type Msg = StoreMsg
 
+// 依聊天室 id 取得角色卡
+const getCharacterCard = (id: string): CharacterCard => {
+  switch (id) {
+    case 'sisters':
+      return SistersCard
+    case 'kabigon':
+    default:
+      return KabigonCard
+  }
+}
+
 const Chat = () => {
   const { id } = useParams<{ id: string }>()
   const roomId = id ?? 'kabigon'
   const room = useMemo(() => allRooms.find(r => r.id === roomId), [roomId])
-  const title = room?.name ?? 'Kabigon'
+  const title = room?.name ?? 'Chat'
+
+  const character = useMemo(() => getCharacterCard(roomId), [roomId])
 
   // 用來強制重新掛載子元件，讓 hook 重新初始化
   const [resetKey, setResetKey] = useState(0)
@@ -34,20 +50,21 @@ const Chat = () => {
   const savedUi = getRoomUi(roomId)
   const initialImageId = savedUi.imageId?.trim() ? savedUi.imageId! : 'img_normal'
 
-  // 直接在父層包一層，清空時先讓畫面背景立刻變成預設
+  // 清空：訊息 + UI 狀態 + 對應角色 chatId；背景立即回預設並重掛子元件
   const handleClearAll = () => {
     clearMessages(roomId)
-    clearRoomUi(roomId) // 清掉聊天室 UI 狀態
-    clearChatId(KabigonCard.roleId) // ✅ 清掉該角色在 Flowise 的 chatId
-    setBgOverrideId('img_normal') // 畫面立即回預設圖（不寫回 storage）
-    setResetKey(k => k + 1) // 重新掛載，之後不會再帶 chatId
+    clearRoomUi(roomId)
+    clearChatId(character.roleId)
+    setBgOverrideId('img_normal')
+    setResetKey(k => k + 1)
   }
 
   return (
     <ChatInner
-      key={resetKey}
+      key={`${roomId}-${resetKey}`}
       roomId={roomId}
       title={title}
+      character={character}
       initialImageId={initialImageId}
       bgOverrideId={bgOverrideId}
       onResetBgOverride={() => setBgOverrideId(null)}
@@ -63,16 +80,18 @@ export default Chat
 function ChatInner(props: {
   roomId: string
   title: string
+  character: CharacterCard
   initialImageId: string
   bgOverrideId: string | null
   onResetBgOverride: () => void
   onClearAll: () => void
 }) {
-  const { roomId, title, initialImageId, bgOverrideId, onResetBgOverride, onClearAll } = props
+  const { roomId, title, character, initialImageId, bgOverrideId, onResetBgOverride, onClearAll } =
+    props
   const navigate = useNavigate()
 
   const { currentImageId, replying, send } = useCharacterChat(
-    KabigonCard,
+    character,
     initialImageId,
     ({ system, user }) => callLLM_FormMode({ system, user })
   )
@@ -95,22 +114,23 @@ function ChatInner(props: {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, replying])
 
-  // 實際顯示的 imageId：若父層要求覆蓋就用覆蓋值，否則用 hook 狀態
+  // 實際顯示的 imageId：若父層覆蓋就用覆蓋值，否則用 hook 狀態
   const effectiveImageId = bgOverrideId !== null ? bgOverrideId : currentImageId
 
   // 由 imageId 解析出實際 URL（找不到就不顯示背景）
   const bgUrl = useMemo(() => {
-    const url = effectiveImageId ? getRoleImageUrl(KabigonCard.roleId, effectiveImageId) : undefined
+    const url =
+      effectiveImageId && character.roleId
+        ? getRoleImageUrl(character.roleId, effectiveImageId)
+        : undefined
     return url
-  }, [effectiveImageId])
+  }, [effectiveImageId, character.roleId])
 
-  // 每次 hook 的 imageId 變化，才寫回 storage（父層 bgOverride 不會寫回）
+  // 當 hook 的 imageId 變化才寫回 storage（父層的覆蓋不寫回）
   useEffect(() => {
     if (bgOverrideId === null) {
       setRoomUi(roomId, { imageId: currentImageId })
     } else {
-      // 一旦子元件掛載完成且 hook 也準備好了，就可以把覆蓋狀態清掉
-      // 確保只用於「清空後的那一幀」立即切回預設，之後回到正常由 hook 控制
       onResetBgOverride()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,7 +148,6 @@ function ChatInner(props: {
       const decision = await send(text)
       const aiMsg: Msg = { id: uid(), from: 'ai', text: decision.reply, ts: Date.now() }
       setMessages(prev => [...prev, aiMsg])
-      // 模型若回了新圖，hook 已處理 currentImageId；此處僅同步情緒/圖到 storage（已在上面的 effect 寫回）
     } catch {
       const aiMsg: Msg = {
         id: uid(),
@@ -140,6 +159,7 @@ function ChatInner(props: {
     }
   }
 
+  // 中文輸入法防誤觸 Enter
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !composingRef.current) {
       e.preventDefault()
@@ -154,7 +174,6 @@ function ChatInner(props: {
   }
 
   const handleClear = () => {
-    // 子元件只處理訊息清除與輸入欄重置；storage 與背景重置交給父元件
     clearMessages(roomId)
     setMessages([])
     setInput('')
@@ -184,6 +203,7 @@ function ChatInner(props: {
             <div className={m.from === 'user' ? styles.bubbleUser : styles.bubbleAi}>{m.text}</div>
           </div>
         ))}
+
         {replying && (
           <div className={styles.rowAi}>
             <div className={styles.bubbleAi}>
@@ -193,6 +213,7 @@ function ChatInner(props: {
             </div>
           </div>
         )}
+
         <div ref={endRef} />
       </main>
 
@@ -206,7 +227,7 @@ function ChatInner(props: {
           onKeyDown={handleKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          disabled={false}
+          disabled={replying}
           autoComplete="off"
           spellCheck={false}
           data-gramm="false"
@@ -216,7 +237,7 @@ function ChatInner(props: {
           data-bwignore="true"
           name="chat-message"
         />
-        <button className={styles.sendBtn} onClick={doSend} aria-label="send">
+        <button className={`${styles.sendBtn} ${replying ? styles.disabled : ''}`} onClick={doSend} aria-label="send" disabled={replying}>
           <img className={styles.sendIcon} src={sendIcon} alt="send" />
         </button>
       </div>
