@@ -184,8 +184,15 @@ function ChatInner(props: {
             <div className={m.from === 'user' ? styles.bubbleUser : styles.bubbleAi}>{m.text}</div>
           </div>
         ))}
-        {/* 你原本的等待動畫 */}
-        {/* ... */}
+        {replying && (
+          <div className={styles.rowAi}>
+            <div className={styles.bubbleAi}>
+              <div className={styles.dotLoading}>
+                <span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={endRef} />
       </main>
 
