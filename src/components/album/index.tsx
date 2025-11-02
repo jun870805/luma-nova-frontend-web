@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import styles from './index.module.scss'
 import { getRoleImageUrl } from '../../utils/roleImage'
 import { getAlbum, unlockImage, type AlbumData } from '../../utils/albumStorage'
+import type { RoleImage } from '../../core/chat/types'
+import closeIcon from '../../assets/icons/close.svg'
 
 type Props = {
   roleId: string
   roleName: string
-  imageIds: string[]
+  images: RoleImage[]
   currentBgId: string
   onClose: () => void
   onUseAsBg: (imageId: string) => void
@@ -15,11 +17,13 @@ type Props = {
 export default function AlbumModal({
   roleId,
   roleName,
-  imageIds,
+  images,
   currentBgId,
   onClose,
   onUseAsBg
 }: Props) {
+  const imageIds = useMemo(() => images.map(i => i.id), [images])
+
   const [album, setAlbum] = useState<AlbumData>(() => getAlbum(roleId, imageIds))
   const [loading, setLoading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -38,7 +42,7 @@ export default function AlbumModal({
     return () => window.removeEventListener('storage', onStorage)
   }, [refresh, roleId])
 
-  const items = useMemo(() => Object.entries(album.images), [album])
+  const items = useMemo(() => images, [images])
 
   const handleUnlock = async (imageId: string) => {
     if (!confirm('使用寶石解鎖？（暫無寶石系統，按下確定即解鎖）')) return
@@ -52,10 +56,10 @@ export default function AlbumModal({
     }
   }
 
-  const openPreview = (imageId: string) => {
-    const url = getRoleImageUrl(roleId, imageId)
+  const openPreview = (img: RoleImage) => {
+    const url = getRoleImageUrl(roleId, img.fileName)
     if (url) {
-      setPreviewId(imageId)
+      setPreviewId(img.id)
       setPreviewUrl(url)
     }
   }
@@ -74,41 +78,52 @@ export default function AlbumModal({
             <button onClick={refresh} disabled={loading}>
               重新整理
             </button>
-            <button onClick={onClose}>✕</button>
+            <button onClick={onClose}>
+              <img src={closeIcon} alt="closeAlbum" />
+            </button>
           </div>
         </header>
 
         <div className={styles.grid}>
-          {items.map(([imageId, status]) => {
-            const isDefault = imageId === 'img'
+          {items.map(img => {
+            const status = album.images[img.id] // 'none' | 'obtained' | 'unlocked'
+            const isDefault = img.id === 'img'
             const isUnlocked = status === 'unlocked' || isDefault
             const isObtained = status === 'obtained'
             const isLocked = status === 'none'
-            const isCurrent = isUnlocked && imageId === currentBgId
-            const url = getRoleImageUrl(roleId, imageId)
+            const isCurrent = isUnlocked && img.id === currentBgId
+            const url = getRoleImageUrl(roleId, img.fileName)
 
             return (
-              <div key={imageId} className={styles.item}>
+              <div key={img.id} className={styles.item}>
                 <div
                   className={[
                     styles.thumb,
                     isUnlocked ? styles.unlocked : isObtained ? styles.obtained : styles.locked
                   ].join(' ')}
-                  style={isUnlocked ? { backgroundImage: `url(${url})` } : {}}
-                  onClick={() => isUnlocked && openPreview(imageId)}
+                  style={
+                    url && (isUnlocked || isObtained)
+                      ? ({ '--thumb-bg': `url(${url})` } as React.CSSProperties)
+                      : undefined
+                  }
+                  onClick={() => isUnlocked && url && openPreview(img)}
                 />
+                <div className={styles.meta}>
+                  <div className={styles.metaName}>{img.name}</div>
+                  <div className={styles.metaDesc}>{img.description}</div>
+                </div>
 
                 <div className={styles.actionRow}>
                   {isLocked ? (
                     <span className={styles.stateText}>未取得</span>
                   ) : isObtained ? (
-                    <button className={styles.unlockBtn} onClick={() => handleUnlock(imageId)}>
+                    <button className={styles.unlockBtn} onClick={() => handleUnlock(img.id)}>
                       解鎖
                     </button>
                   ) : isCurrent ? (
-                    <span className={styles.stateText}>當前使用</span>
+                    <span className={styles.stateTextActive}>當前使用</span>
                   ) : (
-                    <button className={styles.useBtn} onClick={() => onUseAsBg(imageId)}>
+                    <button className={styles.useBtn} onClick={() => onUseAsBg(img.id)}>
                       設為背景
                     </button>
                   )}
@@ -123,20 +138,9 @@ export default function AlbumModal({
         <div className={styles.previewOverlay} onClick={closePreview}>
           <div className={styles.previewBody} onClick={e => e.stopPropagation()}>
             <button className={styles.closePreviewBtn} onClick={closePreview}>
-              ✕
+              <img src={closeIcon} alt="closePreviewImg" />
             </button>
             <img className={styles.previewImg} src={previewUrl} alt={previewId ?? ''} />
-            <div className={styles.previewActions}>
-              <button
-                className={styles.primaryBtn}
-                onClick={() => {
-                  if (previewId) onUseAsBg(previewId)
-                  closePreview()
-                }}
-              >
-                設為背景
-              </button>
-            </div>
           </div>
         </div>
       )}

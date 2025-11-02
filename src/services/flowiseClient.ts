@@ -1,44 +1,64 @@
 // src/services/flowiseClient.ts
 
-export interface FlowiseStartStateKV {
-  key: string
-  value: string
-}
-
-export interface FlowiseRequest {
-  flowId: string
-  baseUrl: string // 例如: https://luma-nova-flowise-server.onrender.com
-  token?: string // 若後端有 Bearer 驗證就傳
-  question: string // 使用者輸入
-  chatId?: string // 第一次可省略；之後沿用；清空時清掉
-  startState?: FlowiseStartStateKV[] // overrideConfig.startState 要帶的鍵值
-}
-
-// 這裡用交集型別，讓你能傳入擴充欄位（例如 emotion/image_id 等）
-export type FlowiseResponse<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+export interface FlowiseResponse {
   text?: string
   chatId?: string
+  [k: string]: unknown
 }
 
-export async function callFlowiseAgent<T extends Record<string, unknown> = Record<string, unknown>>(
-  params: FlowiseRequest
-): Promise<FlowiseResponse<T>> {
-  const { flowId, baseUrl, token, question, chatId, startState = [] } = params
+export type FlowiseStartStateKV = {
+  key: string
+  value: unknown
+}
 
-  const url = `${baseUrl.replace(/\/+$/, '')}/api/v1/prediction/${flowId}`
+export type CallFlowiseParams = {
+  question: string
+  chatId?: string
+  startState?: FlowiseStartStateKV[]
+}
 
-  const body: Record<string, unknown> = {
-    question,
+const BASE = import.meta.env.VITE_FLOWISE_BASE_URL as string
+const FLOW_ID = import.meta.env.VITE_FLOWISE_FLOW_ID as string
+const TOKEN = (import.meta.env.VITE_FLOWISE_TOKEN as string) || undefined
+
+function assertEnvOk() {
+  if (!BASE) throw new Error('VITE_FLOWISE_BASE_URL is missing')
+  if (!FLOW_ID) throw new Error('VITE_FLOWISE_FLOW_ID is missing')
+}
+
+function stripCodeFence(input: string | undefined): string {
+  if (!input) return ''
+  let s = input.trim()
+  if (s.startsWith('```')) {
+    s = s
+      .replace(/^```(?:json)?/i, '')
+      .replace(/```$/i, '')
+      .trim()
+  }
+  if (/^json\s/i.test(s)) {
+    s = s.replace(/^json\s*/i, '').trim()
+  }
+  return s
+}
+
+export async function callFlowise(
+  params: CallFlowiseParams
+): Promise<{ flow: FlowiseResponse; decisionJson?: unknown }> {
+  assertEnvOk()
+
+  const url = `${BASE.replace(/\/+$/, '')}/api/v1/prediction/${FLOW_ID}`
+  const body = {
+    question: params.question,
+    ...(params.chatId ? { chatId: params.chatId } : {}),
     overrideConfig: {
-      startState
+      startState: params.startState ?? []
     }
   }
-  if (chatId) body.chatId = chatId
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
   }
-  if (token) headers.Authorization = `Bearer ${token}`
+  if (TOKEN) headers.Authorization = `Bearer ${TOKEN}`
 
   const res = await fetch(url, {
     method: 'POST',
@@ -47,39 +67,23 @@ export async function callFlowiseAgent<T extends Record<string, unknown> = Recor
   })
 
   if (!res.ok) {
-    const msg = await safeText(res)
-    throw new Error(`Flowise ${res.status}: ${msg || res.statusText}`)
+    const t = await res.text().catch(() => '')
+    throw new Error(`Flowise HTTP ${res.status}: ${t}`)
   }
 
-  const raw = await safeJson(res)
-  // Flowise 可能回字串或物件
-  if (typeof raw === 'string') {
-    return safeParseJSON(raw) as FlowiseResponse<T>
-  }
-  return raw as FlowiseResponse<T>
-}
+  const json = (await res.json()) as FlowiseResponse
+  const rawText = typeof json.text === 'string' ? json.text : ''
 
-async function safeText(res: Response): Promise<string> {
-  try {
-    return await res.text()
-  } catch {
-    return ''
+  // 嘗試把 LLM 回傳中的 JSON 取出（容忍有 ```json ... ``` 包裝）
+  let decisionJson: unknown
+  if (rawText) {
+    const stripped = stripCodeFence(rawText)
+    try {
+      decisionJson = JSON.parse(stripped)
+    } catch {
+      // 不是 JSON 就忽略，交給上層當純文字處理
+    }
   }
-}
 
-async function safeJson(res: Response): Promise<unknown> {
-  const txt = await safeText(res)
-  try {
-    return JSON.parse(txt) as unknown
-  } catch {
-    return txt
-  }
-}
-
-function safeParseJSON(s: string): Record<string, unknown> {
-  try {
-    return JSON.parse(s) as Record<string, unknown>
-  } catch {
-    return { text: s }
-  }
+  return { flow: json, decisionJson }
 }

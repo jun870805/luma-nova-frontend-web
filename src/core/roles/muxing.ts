@@ -1,6 +1,4 @@
-// src/core/roles/muxing.ts
 import { roleToCharacterCard } from './roleAdapter'
-import type { Emotion } from '../chat/types'
 
 export const MuxingCard = roleToCharacterCard({
   roleId: 'muxing',
@@ -13,17 +11,41 @@ export const MuxingCard = roleToCharacterCard({
     '始終以「觀測者」與「守護者」自居',
     '避免過度情感外露，但會以細膩的措辭暗示內心波動'
   ],
-  imageIds: ['img', 'img_prepare', 'img_departure', 'img_evolution', 'img_evolutionEnlarge'],
-  imageByEmotion: {
-    calm: 'img_prepare',
-    thoughtful: 'img_departure',
-    resolute: 'img_evolution',
-    transcendent: 'img_evolutionEnlarge'
-  } as Partial<Record<Emotion, string>>,
-  imageCooldowns: {
-    img_prepare: 2,
-    img_departure: 2,
-    img_evolution: 3,
-    img_evolutionEnlarge: 4
-  }
+  image: [
+    {
+      id: 'img',
+      name: '星守者 (預設圖)',
+      fileName: 'img.png',
+      description: '暮星的初始立繪，象徵她守望的日常姿態。',
+      isCanTrigger: false
+    },
+    {
+      id: 'img_prepare',
+      name: '觀測前夜',
+      fileName: 'img_prepare.png',
+      description: '她在夜幕前整理儀器，準備進行星象觀測。',
+      isCanTrigger: true
+    },
+    {
+      id: 'img_departure',
+      name: '旅途啟程',
+      fileName: 'img_departure.png',
+      description: '當她決定離開荒原時的身影，象徵決心與孤獨。',
+      isCanTrigger: true
+    },
+    {
+      id: 'img_evolution',
+      name: '星核共鳴',
+      fileName: 'img_evolution.png',
+      description: '她與星核產生共鳴，光流纏繞，靈魂與星辰相互呼應。',
+      isCanTrigger: true
+    },
+    {
+      id: 'img_evolutionEnlarge',
+      name: '覺醒之刻',
+      fileName: 'img_evolutionEnlarge.png',
+      description: '暮星完全覺醒，星能於她體內流轉，照亮整個荒原。',
+      isCanTrigger: true
+    }
+  ]
 })

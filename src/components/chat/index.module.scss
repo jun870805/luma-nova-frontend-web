@@ -198,16 +198,18 @@
   background: color.$background-light;
 }
 
+/* ✅ 跟按鈕同高，移除垂直 padding 避免被撐高 */
 .input {
   flex: 1;
   background: #0f1113;
   color: color.$text-main;
   border: 1px solid color.$border-color;
   outline: none;
-  padding: 10px 12px;
+  height: 44px; /* 統一高度 */
+  padding: 0 12px; /* 僅保留水平 padding */
   border-radius: 12px;
   font-size: 15px;
-  height: 42px;
+  line-height: 1; /* 避免文字把高度撐開 */
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -218,10 +220,11 @@
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
 }
 
+/* ✅ 按鈕同樣 44px */
 .sendBtn {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px; /* 與 input 一樣高 */
   border-radius: 12px;
   border: 1px solid color.$border-color;
   background: color.$primary;
@@ -233,7 +236,6 @@
     transform 0.08s ease,
     opacity 0.15s ease;
 }
-
 .sendBtn:active {
   transform: scale(0.96);
 }

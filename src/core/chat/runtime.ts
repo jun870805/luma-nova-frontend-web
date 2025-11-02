@@ -2,161 +2,126 @@
 import type {
   CharacterCard,
   FinalDecision,
+  LlmCaller,
   MemoryItem,
-  ModelOutput,
   SessionContext,
   Turn
 } from './types'
 
-export type LlmCaller = (params: { system: string; user: string }) => Promise<string>
-
-// 將 character + session 組成 system（你原本怎麼組就保留；這裡提供穩定版本）
-function buildSystemPayload(card: CharacterCard, session: SessionContext) {
-  return JSON.stringify({
-    roleId: card.roleId,
-    roleName: card.roleName,
-    bio: card.bio,
-    personality: card.personality,
-    speaking_style: card.speaking_style,
-    worldview_rules: card.worldview_rules,
-    imageIds: (card.imageIds ?? []).filter(id => id !== 'img'),
-    running_summary: session.running_summary,
-    recent_turns: session.recent_turns,
-    last_emotion: session.last_emotion,
-    last_image_id: session.last_image_id,
-    lastSwitchTurnGap: session.turn_index,
-    long_term_memory: '' // 若你有長期記憶摘要可帶
-  })
-}
-
-// ✅ 安全解析：處理 ```json ... ```、"json\n{...}"、雙層字串等情況
-function safeParseModelOutput(raw: string, session: SessionContext): ModelOutput {
-  const fallback: ModelOutput = {
-    reply: raw,
-    emotion: session.last_emotion ?? 'neutral',
-    image_id: session.last_image_id,
-    make_memory: false,
-    memory_text: ''
-  }
-  if (!raw) return fallback
-
-  let cleaned = raw.trim()
-
-  // 去掉 Markdown code fence
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/```$/, '')
+/** 內部：移除 ``` / ```json 圍欄並嘗試解析 JSON */
+function parseFencedJson(input: string | undefined): Record<string, unknown> | undefined {
+  if (!input) return
+  let s = input.trim()
+  if (s.startsWith('```')) {
+    s = s
+      .replace(/^```(?:json)?/i, '')
+      .replace(/```$/i, '')
       .trim()
   }
-
-  // 去掉開頭殘留的 'json' 或 'json\n'
-  if (/^json\b/i.test(cleaned)) {
-    cleaned = cleaned.replace(/^json\b\s*/i, '').trim()
+  if (s.toLowerCase().startsWith('json')) {
+    s = s.slice(4).trim()
   }
-
-  // 若還是被引號包著的字串，嘗試再解一層
-  if (
-    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
-    (cleaned.startsWith("'") && cleaned.endsWith("'"))
-  ) {
-    try {
-      cleaned = JSON.parse(cleaned)
-    } catch {
-      return fallback
-    }
-  }
-
   try {
-    const obj = JSON.parse(cleaned)
-    const out: ModelOutput = {
-      reply: typeof obj.reply === 'string' ? obj.reply : fallback.reply,
-      emotion: typeof obj.emotion === 'string' ? obj.emotion : fallback.emotion,
-      image_id: typeof obj.image_id === 'string' ? obj.image_id : fallback.image_id,
-      make_memory: !!obj.make_memory,
-      memory_text: typeof obj.memory_text === 'string' ? obj.memory_text : ''
-    }
-    return out
+    return JSON.parse(s)
   } catch {
-    return fallback
+    return
   }
 }
 
-// 產生下一個 SessionContext（更新 turns、摘要、情緒、圖片、冷卻等邏輯）
-function nextSession(prev: SessionContext, parsed: ModelOutput): SessionContext {
-  const nextTurns: Turn[] = [
-    ...prev.recent_turns,
-    { role: 'char' as const, text: parsed.reply }
-  ].slice(-12)
-
-  return {
-    ...prev,
-    recent_turns: nextTurns,
-    running_summary: prev.running_summary, // 如果你有摘要更新器可在這裡換
-    last_emotion: parsed.emotion,
-    last_image_id: parsed.image_id,
-    // 你的 cooldown 若有邏輯可在此更新，這裡先原樣帶出
-    image_cooldowns: prev.image_cooldowns,
-    turn_index: prev.turn_index + 1
-  }
+/** 將 Turn 陣列裁切為最近 n 筆 */
+function tail<T>(arr: T[], n: number): T[] {
+  return arr.slice(Math.max(0, arr.length - n))
 }
 
-export async function runCharacterTurn(params: {
+export type RunCharacterTurnParams = {
   llm: LlmCaller
   character_card: CharacterCard
   session_context: SessionContext
-  long_term_memory: MemoryItem[]
   user_input: string
-  lastSwitchTurnGap: number
+
+  // 兼容參數（目前不使用，但保留讓既有呼叫端不會型別出錯）
+  long_term_memory?: MemoryItem[]
   existingMemoriesForDedup?: MemoryItem[]
-}): Promise<{
+  lastSwitchTurnGap?: number
+}
+
+/**
+ * 新版核心回合：
+ * - 僅把「可觸發」圖片（isCanTrigger=true）提供給 LLM
+ * - 由 LLM 回傳 { reply, image_id }；image_id 若不在此角色圖片清單，則忽略（置空）
+ * - 不在此處變更背景；背景由圖冊「設為背景」決定
+ */
+export async function runCharacterTurn(params: RunCharacterTurnParams): Promise<{
   decision: FinalDecision
   nextSessionContext: SessionContext
   memoryToPersist?: MemoryItem
 }> {
-  // 1) call LLM
-  const system = buildSystemPayload(params.character_card, params.session_context)
-  const raw = await params.llm({ system, user: params.user_input })
+  const { character_card: card, session_context: session, user_input } = params
 
-  // 2) 解析（這步會把 ```json ... ``` 清掉，正確取出 image_id）
-  const parsed = safeParseModelOutput(raw, params.session_context)
+  // 只給 LLM 可觸發的圖片清單（避免預設圖 img 被選到）
+  const triggerImages = (card.image || [])
+    .filter(i => i.isCanTrigger)
+    .map(i => ({ id: i.id, name: i.name, description: i.description }))
 
-  // 3) 拼回合（把 user 的話補進去）
-  const nextTurnsWithUser: Turn[] = [
-    ...params.session_context.recent_turns,
-    { role: 'user' as const, text: params.user_input }
-  ].slice(-12)
+  // 建立 system prompt（中文）
+  const system = [
+    '你是一位「角色扮演 AI」，必須以角色身份回覆，不得跳脫世界觀、不得自稱 AI。',
+    `角色 ID：${card.roleId}`,
+    `角色名稱：${card.roleName}`,
+    `人物簡介：${card.bio}`,
+    `個性特質：${(card.personality || []).join('、')}`,
+    `說話風格：${card.speaking_style}`,
+    `世界觀規則：${(card.worldview_rules || []).join('、')}`,
+    '',
+    '— 可被觸發的圖片清單（JSON 陣列） —',
+    JSON.stringify(triggerImages, null, 2),
+    '',
+    '任務：根據使用者輸入，輸出 **唯一** JSON 物件：',
+    '{ "reply": string, "image_id": string }',
+    '若沒有合適圖片請將 image_id 設為空字串。'
+  ].join('\n')
 
-  const sessionAfterUser: SessionContext = {
-    ...params.session_context,
-    recent_turns: nextTurnsWithUser
+  // 呼叫 LLM
+  const llmOut = await params.llm({ system, user: user_input })
+  const rawText = typeof llmOut === 'string' ? llmOut : (llmOut?.text ?? '')
+
+  // 解析 LLM 回傳
+  const decision: FinalDecision = { reply: '', image_id: '' }
+  const parsed = parseFencedJson(rawText)
+  if (parsed && typeof parsed === 'object') {
+    const obj = parsed as Record<string, unknown>
+    decision.reply = typeof obj.reply === 'string' ? obj.reply : ''
+    decision.image_id = typeof obj.image_id === 'string' ? obj.image_id : ''
+  } else {
+    // 當作純文字
+    decision.reply = rawText || ''
   }
 
-  // 4) 更新 session（把角色回覆也加進去，並更新 last_image_id / last_emotion）
-  const nextCtx = nextSession(sessionAfterUser, parsed)
-
-  // 5) 記憶（若需要）
-  let memoryToPersist: MemoryItem | undefined
-  if (parsed.make_memory && parsed.memory_text?.trim()) {
-    memoryToPersist = {
-      id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      text: parsed.memory_text.trim(),
-      ts: Date.now()
-    }
+  // 驗證 image_id 是否屬於此角色，否則忽略（置空）
+  const validIds = new Set((card.image || []).map(i => i.id))
+  if (!validIds.has(decision.image_id)) {
+    decision.image_id = ''
   }
 
-  // 6) 回傳給 hook/元件
-  const decision: FinalDecision = {
-    reply: parsed.reply,
-    emotion: parsed.emotion,
-    image_id: parsed.image_id,
-    make_memory: parsed.make_memory,
-    memory_text: parsed.memory_text
+  // 更新對話（僅累積）
+  const nextTurns: Turn[] = tail(
+    [
+      ...session.recent_turns,
+      { role: 'user', text: user_input },
+      { role: 'char', text: decision.reply }
+    ],
+    12
+  )
+
+  const nextSessionContext: SessionContext = {
+    ...session,
+    recent_turns: nextTurns,
+    // 背景不在 runtime 內更新；維持原值
+    last_image_id: session.last_image_id,
+    image_cooldowns: session.image_cooldowns,
+    turn_index: session.turn_index + 1
   }
 
-  return {
-    decision,
-    nextSessionContext: nextCtx,
-    memoryToPersist
-  }
+  // 此版本暫無自動產生長期記憶
+  return { decision, nextSessionContext }
 }

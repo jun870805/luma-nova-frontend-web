@@ -1,4 +1,3 @@
-// src/components/chat/index.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import styles from './index.module.scss'
@@ -11,31 +10,25 @@ import { rooms as allRooms } from '../../data/rooms'
 import type { Msg as StoreMsg } from '../../utils/chatStorage'
 import { loadMessages, saveMessages, clearMessages } from '../../utils/chatStorage'
 
-import { KabigonCard } from '../../core/roles/kabigon'
-import { MuxingCard } from '../../core/roles/muxing'
-import { SistersCard } from '../../core/roles/sisters'
-
+import { availableRoles, getImageById } from '../../core/roles/roleAdapter'
+import type { CharacterCard } from '../../core/chat/types'
 import { useCharacterChat } from '../../hooks/useCharacterChat'
-import { callLLM_FormMode } from '../../services/llmClient'
 import { getRoleImageUrl } from '../../utils/roleImage'
 import { getRoomUi, setRoomUi, clearRoomUi } from '../../utils/chatUiStorage'
 import { clearChatId } from '../../utils/roleSession'
-
 import AlbumModal from '../album'
-import type { CharacterCard } from '../../core/chat/types'
 
 type Msg = StoreMsg
 
-const roleMap = {
-  kabigon: KabigonCard,
-  muxing: MuxingCard,
-  sisters: SistersCard
-} as const
+const roleMap: Record<string, CharacterCard> = Object.fromEntries(
+  availableRoles.map(r => [r.roleId, r])
+)
 
 const Chat = () => {
   const { id } = useParams<{ id: string }>()
-  const roomId = id ?? 'kabigon'
-  const roleCard = roleMap[roomId as keyof typeof roleMap] ?? KabigonCard
+  const roomId = id ?? availableRoles[0].roleId
+  const roleCard = roleMap[roomId] ?? availableRoles[0]
+
   const room = useMemo(() => allRooms.find(r => r.id === roomId), [roomId])
   const title = room?.name ?? roleCard.roleName
 
@@ -69,8 +62,6 @@ const Chat = () => {
 
 export default Chat
 
-// ---------------- 子元件 ----------------
-
 function ChatInner(props: {
   roomId: string
   title: string
@@ -84,11 +75,8 @@ function ChatInner(props: {
     props
 
   const navigate = useNavigate()
-  const { currentImageId, replying, send, lockedBg, setLockedBg } = useCharacterChat(
-    roleCard,
-    initialImageId,
-    ({ system, user }) => callLLM_FormMode({ system, user })
-  )
+
+  const { replying, send } = useCharacterChat(roleCard, initialImageId)
 
   const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')
@@ -109,33 +97,47 @@ function ChatInner(props: {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, replying])
 
-  const effectiveBgId = bgOverrideId ?? lockedBg ?? currentImageId
+  // 圖冊鎖定背景
+  const locked = getRoomUi(roomId)?.imageId || 'img'
+  const lockedFile = getImageById(roleCard, locked)?.fileName
+  const overrideFile = bgOverrideId ? getImageById(roleCard, bgOverrideId)?.fileName : undefined
 
   const bgUrl = useMemo(() => {
-    const url = effectiveBgId ? getRoleImageUrl(roleCard.roleId, effectiveBgId) : undefined
-    return url
-  }, [roleCard.roleId, effectiveBgId])
+    const file = overrideFile ?? lockedFile ?? getImageById(roleCard, 'img')?.fileName
+    return getRoleImageUrl(roleCard.roleId, file)
+  }, [roleCard, overrideFile, lockedFile])
 
   useEffect(() => {
-    if (bgOverrideId === null) setRoomUi(roomId, { imageId: lockedBg ?? currentImageId })
-    else onResetBgOverride()
-  }, [roomId, currentImageId, lockedBg, bgOverrideId, onResetBgOverride])
+    if (bgOverrideId === null) {
+      setRoomUi(roomId, { imageId: locked || 'img' })
+    } else {
+      onResetBgOverride()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, locked])
 
   const doSend = async () => {
     const text = input.trim()
     if (!text || replying) return
+
     const userMsg: Msg = { id: uid(), from: 'user', text, ts: Date.now() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
+
     try {
-      const decision = await send(text)
+      const decision = await (async () => {
+        // 直接呼叫 hook 封裝的 flowise
+        const res = await send(text)
+        return res
+      })()
+
       const aiMsg: Msg = { id: uid(), from: 'ai', text: decision.reply, ts: Date.now() }
       setMessages(prev => [...prev, aiMsg])
     } catch {
       const aiMsg: Msg = {
         id: uid(),
         from: 'ai',
-        text: '抱歉，我打瞌睡了，能再說一次嗎？',
+        text: '抱歉，我剛剛打瞌睡了，再說一次可以嗎？',
         ts: Date.now()
       }
       setMessages(prev => [...prev, aiMsg])
@@ -157,7 +159,7 @@ function ChatInner(props: {
   }
 
   const handleUseAsBg = (imgId: string) => {
-    setLockedBg(imgId)
+    setRoomUi(roomId, { imageId: imgId })
     setShowAlbum(false)
   }
 
@@ -224,8 +226,8 @@ function ChatInner(props: {
         <AlbumModal
           roleId={roleCard.roleId}
           roleName={roleCard.roleName}
-          imageIds={roleCard.imageIds}
-          currentBgId={lockedBg ?? 'img'}
+          images={roleCard.image}
+          currentBgId={locked || 'img'}
           onClose={() => setShowAlbum(false)}
           onUseAsBg={handleUseAsBg}
         />

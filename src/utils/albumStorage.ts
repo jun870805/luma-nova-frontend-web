@@ -1,67 +1,51 @@
 export type AlbumStatus = 'none' | 'obtained' | 'unlocked'
-
-export interface AlbumData {
+export type AlbumData = {
   roleId: string
-  images: Record<string, AlbumStatus>
+  images: Record<string, AlbumStatus> // key = imageId
+  ts: number
 }
 
-const STORAGE_KEY_PREFIX = 'album_v1_'
-const storageKey = (roleId: string) => STORAGE_KEY_PREFIX + roleId
+const KEY = (roleId: string) => `album_v1_${roleId}`
 
-export function getAlbum(roleId: string, allImageIds: string[]): AlbumData {
-  const raw = localStorage.getItem(storageKey(roleId))
-  let parsed: AlbumData | null = null
-  if (raw) {
-    try {
-      parsed = JSON.parse(raw)
-    } catch {
-      parsed = null
-    }
+export function getAlbum(roleId: string, imageIds: string[]): AlbumData {
+  const raw = localStorage.getItem(KEY(roleId))
+  const base: AlbumData = raw ? JSON.parse(raw) : { roleId, images: {}, ts: Date.now() }
+
+  for (const id of imageIds) {
+    if (base.images[id]) continue
+    base.images[id] = id === 'img' ? 'unlocked' : 'none'
   }
+  localStorage.setItem(KEY(roleId), JSON.stringify(base))
+  return base
+}
 
-  const result: AlbumData = { roleId, images: {} }
-  for (const id of allImageIds) {
-    result.images[id] = parsed?.images?.[id] ?? 'none'
+export function setAlbum(roleId: string, data: AlbumData) {
+  localStorage.setItem(KEY(roleId), JSON.stringify(data))
+}
+
+export function unlockImage(roleId: string, imageId: string, imageIds: string[]) {
+  const album = getAlbum(roleId, imageIds)
+  if (!album.images[imageId]) album.images[imageId] = 'none'
+  album.images[imageId] = 'unlocked'
+  album.ts = Date.now()
+  setAlbum(roleId, album)
+}
+
+export function markObtainedIfKnown(roleId: string, imageId: string, imageIds: string[]) {
+  const album = getAlbum(roleId, imageIds)
+  if (!(imageId in album.images)) return
+  if (album.images[imageId] === 'none') {
+    album.images[imageId] = 'obtained'
+    album.ts = Date.now()
+    setAlbum(roleId, album)
   }
-  result.images['img'] = 'unlocked' // 預設背景永遠解鎖
-  return result
 }
 
-export function saveAlbum(roleId: string, data: AlbumData) {
-  localStorage.setItem(storageKey(roleId), JSON.stringify(data))
+export function isUnlocked(roleId: string, imageId: string, imageIds: string[]): boolean {
+  const album = getAlbum(roleId, imageIds)
+  return album.images[imageId] === 'unlocked'
 }
 
-export function ensureAlbumInitialized(roleId: string, allImageIds: string[]) {
-  const existing = getAlbum(roleId, allImageIds)
-  saveAlbum(roleId, existing)
-}
-
-export function markObtained(
-  roleId: string,
-  imageId: string,
-  allImageIds: string[],
-  forceUnlock = false
-) {
-  const record = getAlbum(roleId, allImageIds)
-  if (!record.images[imageId]) record.images[imageId] = 'none'
-
-  if (imageId === 'img' || forceUnlock) {
-    record.images[imageId] = 'unlocked'
-  } else if (record.images[imageId] === 'none') {
-    record.images[imageId] = 'obtained'
-  }
-
-  saveAlbum(roleId, record)
-}
-
-export function unlockImage(roleId: string, imageId: string, allImageIds?: string[]) {
-  let record: AlbumData
-  if (allImageIds?.length) record = getAlbum(roleId, allImageIds)
-  else {
-    const raw = localStorage.getItem(storageKey(roleId))
-    record = raw ? (JSON.parse(raw) as AlbumData) : { roleId, images: {} }
-  }
-  record.images[imageId] = 'unlocked'
-  record.images['img'] = 'unlocked'
-  saveAlbum(roleId, record)
+export function clearAlbum(roleId: string) {
+  localStorage.removeItem(KEY(roleId))
 }

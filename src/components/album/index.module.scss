@@ -1,118 +1,203 @@
 @use '../../styles/color' as color;
 
+/* ========= Overlay + Modal ========= */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
+  z-index: 60;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
 }
 
 .modal {
-  width: 92%;
-  max-width: 880px;
-  max-height: 86%;
+  width: min(980px, 96vw);
+  height: min(86vh, 92vh);
+  margin: 24px auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
   background: color.$background-light;
-  border-radius: 20px;
+  border: 1px solid color.$border-color;
+  border-radius: 16px;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
+/* ========= Header ========= */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid color.$border-color;
-  color: color.$text-main;
-  font-weight: 600;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent), color.$background-light;
+}
+
+.title {
   font-size: 18px;
+  font-weight: 700;
+  color: color.$text-main;
+  letter-spacing: 0.2px;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 
   button {
+    height: 36px;
+    padding: 0 8px;
+    border-radius: 10px;
     border: 1px solid color.$border-color;
-    background: transparent;
+    background: #18181b;
     color: color.$text-main;
-    border-radius: 8px;
-    padding: 6px 10px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      transform 0.06s ease,
+      opacity 0.15s ease;
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  img {
+    width: 18px;
+    height: 18px;
+    filter: brightness(0) invert(1);
   }
 }
 
+/* ========= Grid ========= */
 .grid {
+  padding: 16px;
+  overflow: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 16px;
-  padding: 18px;
-  overflow-y: auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (min-width: 560px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  @media (min-width: 920px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
+/* ========= Card ========= */
 .item {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 10px;
+  border: 1px solid color.$border-color;
+  border-radius: 14px;
+  background: #121214;
+  padding: 12px;
+}
+
+/* 預覽縮圖 */
+.thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f0f10;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: default;
+
+  /* 已解鎖 */
+  &.unlocked {
+    background-image: var(--thumb-bg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    cursor: pointer;
+  }
+
+  /* 取得未解鎖：模糊遮罩 */
+  &.obtained {
+    background: #0b0b0c;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: var(--thumb-bg);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      filter: blur(10px) saturate(0.85) brightness(0.75);
+      transform: scale(1.06);
+      pointer-events: none;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(0, 0, 0, 0.25);
+      pointer-events: none;
+    }
+  }
+
+  /* ❓ 未取得：黑底＋中間顯示 question.svg */
+  &.locked {
+    background: #000 !important;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url('../../assets/icons/question.svg');
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: 80px 80px;
+      pointer-events: none;
+    }
+  }
+}
+
+/* 名稱 / 描述 */
+.meta {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   text-align: center;
-  gap: 8px;
+  padding: 0 4px;
 }
 
-.thumb {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 12px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #0d0d0f;
-  border: 1px solid color.$border-color;
-  cursor: pointer;
+.metaName {
+  font-size: 15px;
+  font-weight: 600;
+  color: color.$text-main;
+  line-height: 1.4;
+  margin-bottom: 4px;
 }
 
-/* 狀態樣式 */
-.unlocked {
-  filter: none;
+.metaDesc {
+  font-size: 13px;
+  font-weight: 400;
+  color: color.$text-sub;
+  line-height: 1.55;
+  white-space: pre-line;
 }
 
-.obtained {
-  background-color: #000;
-  filter: blur(4px) brightness(0.7);
-  position: relative;
-  overflow: hidden;
-}
-
-.locked {
-  background: #000;
-  filter: none;
-}
-
-/* 下方動作列 */
+/* ========= Actions ========= */
 .actionRow {
   display: flex;
-  align-items: center;
   justify-content: center;
-  min-height: 36px;
-}
-
-.useBtn,
-.unlockBtn {
-  font-size: 14px;
-  border-radius: 8px;
-  padding: 6px 12px;
-  cursor: pointer;
-}
-
-.useBtn {
-  background: color.$primary;
-  color: #fff;
-  border: none;
-}
-
-.unlockBtn {
-  background: #444;
-  color: #fff;
-  border: 1px solid color.$border-color;
+  align-items: center;
+  gap: 8px;
 }
 
 .stateText {
@@ -120,60 +205,110 @@
   color: color.$text-sub;
 }
 
-/* 預覽 Lightbox */
+.stateTextActive {
+  font-size: 13px;
+  color: color.$primary;
+  font-weight: 600;
+}
+
+.useBtn,
+.unlockBtn {
+  min-width: 110px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color.$border-color;
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    opacity 0.15s ease;
+}
+
+/* 設為背景：主色 */
+.useBtn {
+  background: color.$primary;
+  border-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* 解鎖：次要按鈕（外框主色） */
+.unlockBtn {
+  background: transparent;
+  border-color: color.$primary;
+  color: color.$primary;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ========= Preview (Viewer) ========= */
 .previewOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.76);
+  z-index: 70;
   display: grid;
-  place-items: center;
-  z-index: 2100;
+  grid-template-rows: auto 1fr;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
 }
 
 .previewBody {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   width: min(92vw, 980px);
-  height: min(86vh, 720px);
-  background: color.$background;
+  height: min(92vh, 920px);
+  margin: 24px auto;
+  background: color.$background-light;
+  border: 1px solid color.$border-color;
   border-radius: 16px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
 .closePreviewBtn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  border: none;
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
-  font-size: 20px;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  align-self: start;
+  justify-self: end;
+  margin: 10px 12px 0 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid color.$border-color;
+  background: #18181b;
+  color: color.$text-main;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 18px;
+    height: 18px;
+    filter: brightness(0) invert(1);
+  }
+
+  &:active {
+    transform: scale(0.97);
+  }
 }
 
 .previewImg {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
-  background: #0d0d0f;
-}
-
-.previewActions {
-  position: absolute;
-  bottom: 14px;
-  right: 16px;
+  place-self: center;
+  display: block;
 }
 
 .primaryBtn {
+  min-width: 140px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   background: color.$primary;
   color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 14px;
   cursor: pointer;
 }
