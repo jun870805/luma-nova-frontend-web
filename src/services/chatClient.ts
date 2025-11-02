@@ -1,5 +1,5 @@
 // src/services/chatClient.ts
-import { callFlowise, FlowiseEnv, type StartStateKV } from './flowiseClient'
+import { callFlowise, type StartStateKV } from './flowiseClient'
 import type { CharacterCard, FinalDecision, RoleImage } from '../core/chat/types'
 import { getSelectedModel, type ModelKey } from '../utils/settingsStorage'
 
@@ -7,10 +7,10 @@ import { getSelectedModel, type ModelKey } from '../utils/settingsStorage'
 function pickFlowIdByModelKey(key: ModelKey): string {
   switch (key) {
     case 'llama3_8b':
-      return FlowiseEnv.FLOW_ID_LLAMA
+      return (import.meta.env.VITE_FLOWISE_CHAT_LLAMA_FLOW_ID as string) || ''
     case 'gemini_flash':
     default:
-      return FlowiseEnv.FLOW_ID_GEMINI
+      return (import.meta.env.VITE_FLOWISE_CHAT_GEMINI_FLOW_ID as string) || ''
   }
 }
 
@@ -46,6 +46,7 @@ export async function callCharacterLLM(params: {
 }): Promise<{ decision?: FinalDecision; flowText: string; flowChatId?: string }> {
   // ✅ 從設定讀取當前模型 key
   const modelKey = getSelectedModel()
+  console.log('modelKey', modelKey)
   const flowId = pickFlowIdByModelKey(modelKey)
   console.log('flowId', flowId)
 

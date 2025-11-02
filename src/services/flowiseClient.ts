@@ -94,11 +94,3 @@ export async function callFlowise(
 
   return { flow: json, decisionJson }
 }
-
-/** 方便別處取得 env（例如依模型選 flowId） */
-export const FlowiseEnv = {
-  BASE,
-  TOKEN,
-  FLOW_ID_GEMINI: import.meta.env.VITE_FLOWISE_CHAT_GEMINI_FLOW_ID as string,
-  FLOW_ID_LLAMA: import.meta.env.VITE_FLOWISE_CHAT_LLAMA_FLOW_ID as string
-}
