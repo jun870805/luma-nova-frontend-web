@@ -87,7 +87,18 @@ function ChatInner(props: {
   useEffect(() => {
     const cached = loadMessages(roomId)
     setMessages(cached)
-  }, [roomId])
+
+    if (cached.length === 0 && roleCard.firstMessage) {
+      const aiMsg: Msg = {
+        id: uid(),
+        from: 'ai',
+        text: roleCard.firstMessage,
+        ts: Date.now()
+      }
+      setMessages([aiMsg])
+      saveMessages(roomId, [aiMsg])
+    }
+  }, [roomId, roleCard])
 
   useEffect(() => {
     if (messages.length) saveMessages(roomId, messages)
@@ -134,10 +145,12 @@ function ChatInner(props: {
       const aiMsg: Msg = { id: uid(), from: 'ai', text: decision.reply, ts: Date.now() }
       setMessages(prev => [...prev, aiMsg])
     } catch {
+      const fallbackText = roleCard.errorMessage || '發生錯誤，請稍後再試。'
+
       const aiMsg: Msg = {
         id: uid(),
         from: 'ai',
-        text: '抱歉，我剛剛打瞌睡了，再說一次可以嗎？',
+        text: fallbackText,
         ts: Date.now()
       }
       setMessages(prev => [...prev, aiMsg])

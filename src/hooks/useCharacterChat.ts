@@ -64,8 +64,8 @@ export function useCharacterChat(character: CharacterCard, initialImageId: strin
         { key: 'roleName', value: character.roleName },
         { key: 'bio', value: character.bio },
         { key: 'personality', value: character.personality },
-        { key: 'speaking_style', value: character.speaking_style },
-        { key: 'worldview_rules', value: character.worldview_rules ?? [] },
+        { key: 'speakingStyle', value: character.speakingStyle },
+        { key: 'worldviewRules', value: character.worldviewRules ?? [] },
         { key: 'images', value: triggerImages }
       ]
 

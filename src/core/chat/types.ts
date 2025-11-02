@@ -42,8 +42,10 @@ export type CharacterCard = {
   roleName: string
   bio: string
   personality: string[]
-  speaking_style: string
-  worldview_rules?: string[]
-  image: RoleImage[] // 新：完整圖片定義
-  imageIds?: string[] // 相容欄位（由 roleAdapter 自動補）
+  speakingStyle: string
+  worldviewRules?: string[]
+  image: RoleImage[]
+  imageIds?: string[]
+  firstMessage?: string
+  errorMessage?: string
 }
