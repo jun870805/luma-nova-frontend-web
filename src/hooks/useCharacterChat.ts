@@ -1,7 +1,7 @@
 // src/hooks/useCharacterChat.ts
 import { useState } from 'react'
 import type { CharacterCard, FinalDecision } from '../core/chat/types'
-import { callCharacterLLM } from '../services/chatClient'
+import { callCharacterLLM as callCharacterChat } from '../services/chatClient'
 import { getChatId, setChatId } from '../utils/roleSession'
 
 export function useCharacterChat(character: CharacterCard) {
@@ -11,7 +11,7 @@ export function useCharacterChat(character: CharacterCard) {
     setReplying(true)
     try {
       const existingChatId = getChatId(character.roleId)
-      const { decision, flowText, flowChatId } = await callCharacterLLM({
+      const { decision, flowText, flowChatId } = await callCharacterChat({
         character,
         question: userText,
         chatId: existingChatId
