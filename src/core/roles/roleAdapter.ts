@@ -24,5 +24,6 @@ export function getImageById(
 import { KabigonCard } from './kabigon'
 import { MuxingCard } from './muxing'
 import { SistersCard } from './sisters'
+import { ZhouCard } from './zhou'
 
-export const availableRoles: CharacterCard[] = [KabigonCard, MuxingCard, SistersCard]
+export const availableRoles: CharacterCard[] = [KabigonCard, MuxingCard, SistersCard, ZhouCard]
