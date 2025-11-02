@@ -71,12 +71,11 @@ function ChatInner(props: {
   onResetBgOverride: () => void
   onClearAll: () => void
 }) {
-  const { roomId, title, roleCard, initialImageId, bgOverrideId, onResetBgOverride, onClearAll } =
-    props
+  const { roomId, title, roleCard, bgOverrideId, onResetBgOverride, onClearAll } = props
 
   const navigate = useNavigate()
 
-  const { replying, send } = useCharacterChat(roleCard, initialImageId)
+  const { replying, send } = useCharacterChat(roleCard)
 
   const [messages, setMessages] = useState<Msg[]>([])
   const [input, setInput] = useState('')

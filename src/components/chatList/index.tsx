@@ -5,6 +5,8 @@ import styles from './index.module.scss'
 import { rooms as baseRooms } from '../../data/rooms'
 import { getLast } from '../../utils/chatStorage'
 import { formatLastTime } from '../../utils/time'
+import settingsIcon from '../../assets/icons/settings.svg'
+import SettingsModal from '../settings'
 
 type ListRoom = { id: string; name: string; last: string; ts: number | null }
 
@@ -12,6 +14,7 @@ const ChatList = () => {
   const nav = useNavigate()
   const base = useMemo(() => baseRooms, [])
   const [rooms, setRooms] = useState<ListRoom[]>([])
+  const [showSettings, setShowSettings] = useState(false)
 
   const refresh = () => {
     const next: ListRoom[] = base.map(r => {
@@ -34,6 +37,9 @@ const ChatList = () => {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.title}>Luma Nova</div>
+        <button className={styles.settingsBtn} onClick={() => setShowSettings(true)}>
+          <img src={settingsIcon} alt="settings" />
+        </button>
       </header>
 
       <main className={styles.listArea}>
@@ -47,6 +53,8 @@ const ChatList = () => {
           </button>
         ))}
       </main>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

@@ -1,0 +1,135 @@
+@use '../../styles/color' as color;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.modal {
+  width: min(520px, 96vw);
+  border: 1px solid color.$border-color;
+  background: color.$background-light;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid color.$border-color;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent), color.$background-light;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 700;
+  color: color.$text-main;
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid color.$border-color;
+  background: #18181b;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  img {
+    width: 18px;
+    height: 18px;
+    filter: brightness(0) invert(1);
+  }
+}
+
+.list {
+  padding: 12px;
+}
+
+.item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #121214;
+  border: 1px solid color.$border-color;
+  border-radius: 12px;
+  color: color.$text-main;
+  cursor: pointer;
+}
+
+.item + .item {
+  margin-top: 10px;
+}
+
+.itemMain {
+  flex: 1;
+  min-width: 0;
+}
+.itemTitle {
+  font-weight: 600;
+}
+.itemSub {
+  margin-top: 4px;
+  color: color.$text-sub;
+  font-size: 13px;
+}
+
+.rightIcon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) invert(1);
+}
+
+.radioRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #121214;
+  border: 1px solid color.$border-color;
+  color: color.$text-main;
+  padding: 12px;
+  border-radius: 12px;
+  & + .radioRow {
+    margin-top: 8px;
+  }
+  input {
+    accent-color: color.$primary;
+  }
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.primary,
+.secondary {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid color.$border-color;
+  cursor: pointer;
+}
+
+.primary {
+  background: color.$primary;
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.secondary {
+  background: transparent;
+  color: color.$text-main;
+}
