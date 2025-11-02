@@ -30,7 +30,7 @@ export default function SettingsModal({ onClose }: Props) {
           <div className={styles.list}>
             <button className={styles.item} onClick={() => setPage('model')}>
               <div className={styles.itemMain}>
-                <div className={styles.itemTitle}>語言模型選擇</div>
+                <div className={styles.itemTitle}>語言模型</div>
                 <div className={styles.itemSub}>
                   {MODEL_OPTIONS.find(o => o.key === sel)?.label}
                 </div>
