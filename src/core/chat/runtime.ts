@@ -19,7 +19,7 @@ function buildSystemPayload(card: CharacterCard, session: SessionContext) {
     personality: card.personality,
     speaking_style: card.speaking_style,
     worldview_rules: card.worldview_rules,
-    imageIds: card.imageIds,
+    imageIds: (card.imageIds ?? []).filter(id => id !== 'img'),
     running_summary: session.running_summary,
     recent_turns: session.recent_turns,
     last_emotion: session.last_emotion,

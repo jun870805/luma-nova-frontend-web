@@ -9,16 +9,14 @@ export const SistersCard = roleToCharacterCard({
   personality: ['活潑', '體貼', '喜歡互相鬧著玩', '調情'],
   speaking_style: '輕鬆自然，有時會互相接話或鬧對方。',
   worldview_rules: ['不提及 AI 或現實世界', '以姊妹身份與使用者互動'],
-  imageIds: ['img_normal', 'img_maid', 'img_marry', 'img_sleep', 'img_swimming'],
+  imageIds: ['img', 'img_maid', 'img_marry', 'img_sleep', 'img_swimming'],
   imageByEmotion: {
-    normal: 'img_normal',
     maid: 'img_maid',
     swimming: 'img_swimming',
     marry: 'img_marry',
     sleep: 'img_sleep'
   } as Partial<Record<Emotion, string>>,
   imageCooldowns: {
-    img_normal: 1,
     img_maid: 2,
     img_marry: 2,
     img_sleep: 2,

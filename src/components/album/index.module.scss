@@ -1,0 +1,179 @@
+@use '../../styles/color' as color;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  width: 92%;
+  max-width: 880px;
+  max-height: 86%;
+  background: color.$background-light;
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid color.$border-color;
+  color: color.$text-main;
+  font-weight: 600;
+  font-size: 18px;
+
+  button {
+    border: 1px solid color.$border-color;
+    background: transparent;
+    color: color.$text-main;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  padding: 18px;
+  overflow-y: auto;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  gap: 8px;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #0d0d0f;
+  border: 1px solid color.$border-color;
+  cursor: pointer;
+}
+
+/* 狀態樣式 */
+.unlocked {
+  filter: none;
+}
+
+.obtained {
+  background-color: #000;
+  filter: blur(4px) brightness(0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+.locked {
+  background: #000;
+  filter: none;
+}
+
+/* 下方動作列 */
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+}
+
+.useBtn,
+.unlockBtn {
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.useBtn {
+  background: color.$primary;
+  color: #fff;
+  border: none;
+}
+
+.unlockBtn {
+  background: #444;
+  color: #fff;
+  border: 1px solid color.$border-color;
+}
+
+.stateText {
+  font-size: 13px;
+  color: color.$text-sub;
+}
+
+/* 預覽 Lightbox */
+.previewOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.76);
+  display: grid;
+  place-items: center;
+  z-index: 2100;
+}
+
+.previewBody {
+  width: min(92vw, 980px);
+  height: min(86vh, 720px);
+  background: color.$background;
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.closePreviewBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 20px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #0d0d0f;
+}
+
+.previewActions {
+  position: absolute;
+  bottom: 14px;
+  right: 16px;
+}
+
+.primaryBtn {
+  background: color.$primary;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}

@@ -1,7 +1,58 @@
-/* src/styles/color.scss */
-$primary: #8b5cf6 !default;
-$background: #0e0e0f !default;
-$background-light: #1a1a1c !default;
-$text-main: #e8e8e8 !default;
-$text-sub: #9a9a9a !default;
+/* ===================================
+   🎨 Color System – Luma Nova Theme
+   =================================== */
+
+/* ---- Core Palette ---- */
+$primary: #8b5cf6 !default; // 主色：柔和紫
+$secondary: #a78bfa !default;
+$accent: #c4b5fd !default;
+
+/* ---- Background Layers ---- */
+$background: #0e0e0f !default; // 頁面底色
+$background-light: #1a1a1c !default; // 淺層容器底色（聊天區塊、卡片底）
+$background1: #161618 !default; // 淺層背景 1（header, list row）
+$background2: #1d1d20 !default; // 次層背景 2
+$background3: #2a2a2d !default; // 內層邊框背景、hover 邊界
+$background_cards: #131315 !default; // 卡片 / 模組背景
+$overlay: rgba(0, 0, 0, 0.55) !default; // 半透明覆蓋層
+$transparent_10_02: rgba(255, 255, 255, 0.1) !default;
+
+/* ---- Text Colors ---- */
+$text-main: #e8e8e8 !default; // 主文字
+$text-sub: #9a9a9a !default; // 次文字
+$text-note: #7a7a7a !default; // 註解、弱提示
+$text-placeholder: #6d6d6f !default; // 輸入框提示
+$text-article: #e0e0e0 !default; // 文章內容
+
+/* ---- Neutral / Common ---- */
+$common_primary: #8b5cf6 !default; // 主要互動色（按鈕、強調）
+$common_neutral_white: #ffffff !default;
+$common_neutral_black: #000000 !default;
+
+/* ---- Border / Divider ---- */
 $border-color: #2c2c2e !default;
+$divider-light: rgba(255, 255, 255, 0.1) !default;
+$divider-dark: rgba(0, 0, 0, 0.2) !default;
+
+/* ---- State Colors ---- */
+$success: #22c55e !default;
+$warning: #facc15 !default;
+$error: #ef4444 !default;
+$info: #60a5fa !default;
+
+/* ---- Gradients ---- */
+$gradient-primary: linear-gradient(135deg, #8b5cf6, #a78bfa) !default;
+$gradient-dark: linear-gradient(180deg, #1c1c1e, #0e0e0f) !default;
+$gradient-overlay: linear-gradient(
+  180deg,
+  rgba(0, 0, 0, 0.35),
+  rgba(0, 0, 0, 0) 22%,
+  rgba(0, 0, 0, 0.45) 100%
+) !default;
+
+/* ---- Utility ---- */
+$shadow-soft: 0 4px 10px rgba(0, 0, 0, 0.25) !default;
+$shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.45) !default;
+$radius-sm: 6px !default;
+$radius-md: 12px !default;
+$radius-lg: 24px !default;

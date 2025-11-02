@@ -13,16 +13,14 @@ export const MuxingCard = roleToCharacterCard({
     '始終以「觀測者」與「守護者」自居',
     '避免過度情感外露，但會以細膩的措辭暗示內心波動'
   ],
-  imageIds: ['img_normal', 'img_prepare', 'img_departure', 'img_evolution', 'img_evolutionEnlarge'],
+  imageIds: ['img', 'img_prepare', 'img_departure', 'img_evolution', 'img_evolutionEnlarge'],
   imageByEmotion: {
-    neutral: 'img_normal',
     calm: 'img_prepare',
     thoughtful: 'img_departure',
     resolute: 'img_evolution',
     transcendent: 'img_evolutionEnlarge'
   } as Partial<Record<Emotion, string>>,
   imageCooldowns: {
-    img_normal: 1,
     img_prepare: 2,
     img_departure: 2,
     img_evolution: 3,
