@@ -46,9 +46,7 @@ export async function callCharacterLLM(params: {
 }): Promise<{ decision?: FinalDecision; flowText: string; flowChatId?: string }> {
   // ✅ 從設定讀取當前模型 key
   const modelKey = getSelectedModel()
-  console.log('modelKey', modelKey)
   const flowId = pickFlowIdByModelKey(modelKey)
-  console.log('flowId', flowId)
 
   const startState = [
     ...buildStartStateFromCharacter(params.character),
