@@ -17,6 +17,7 @@ import { getRoleImageUrl } from '../../utils/roleImage'
 import { getRoomUi, setRoomUi, clearRoomUi } from '../../utils/chatUiStorage'
 import { clearChatId } from '../../utils/roleSession'
 import AlbumModal from '../album'
+import { clearAlbum, markObtainedIfKnown } from '../../utils/albumStorage'
 
 type Msg = StoreMsg
 
@@ -141,6 +142,15 @@ function ChatInner(props: {
         return res
       })()
 
+      if (decision?.image_id) {
+        const imgId = decision.image_id
+        const isDefault = imgId === 'img'
+        if (!isDefault) {
+          const allIds = roleCard.image.map(i => i.id)
+          markObtainedIfKnown(roleCard.roleId, imgId, allIds)
+        }
+      }
+
       const aiMsg: Msg = { id: uid(), from: 'ai', text: decision.reply, ts: Date.now() }
       setMessages(prev => [...prev, aiMsg])
     } catch {
@@ -165,6 +175,7 @@ function ChatInner(props: {
 
   const handleClear = () => {
     clearMessages(roomId)
+    clearAlbum(roleCard.roleId)
     setMessages([])
     setInput('')
     onClearAll()
